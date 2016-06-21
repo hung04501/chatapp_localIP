@@ -15,11 +15,15 @@
 		width :50px;
 		height :50px;
 	  }
+	  .container{
+		max-height : 300px;
+	  }
     </style>
 	<link rel="stylesheet" href="./emotion/css/basic/emojify.css" />
 	<script src="./emotion/emojify.js"></script>
 	<script src="http://192.168.100.113:5000/socket.io/socket.io.js"></script>
-	<script src="http://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="./emotion/jquery-latest.min.js"></script>
+	
 	
 
 	<script>
@@ -54,6 +58,7 @@ if (RTCPeerConnection) (function () {
 		ipClient = displayAddrs.join(" or perhaps ") ;
 		//send ip client to server
 		//socket.emit('ipclient', displayAddrs.join(" or perhaps ") || "n/a");
+		
     }
     
     function grepSDP(sdp) {
@@ -75,8 +80,7 @@ if (RTCPeerConnection) (function () {
     document.getElementById('list').innerHTML = "<code>ifconfig | grep inet | grep -v inet6 | cut -d\" \" -f2 | tail -n1</code>";
     document.getElementById('list').nextSibling.textContent = "In Chrome and Firefox your IP should display automatically, by the power of WebRTCskull.";
 }
-//send ip client to server
-//
+
 		
 </script>
 
@@ -118,13 +122,19 @@ function clickCounter() {
   <div id="img1"></div> 
 	<div id="messages"></div>
 	  <!--<input id="regusr"/><button id="btnReg">Register</button>-->
-      <input id="msg"/><button id="btnsend">Send</button>
+	  <!-- <form  action="/api/messages" method="post" id="myForm"> -->
+		<input type="hidden" id="ipuser" name="ipclient" >
+		  <input id="msg" name="message"/><button id="btnsend">Send</button>
+		  <input type="hidden" id="datechat" name ="timechat">
+	  <!-- </form> -->
 	  <div id="my-element"></div>
 	  
 	<script>
+	
+		//$(window).focus(function(){ //set focus to our text :D });
 		//notification
 		
-				function notifyMe(message) {
+				function notifyMe(user,message) {
 		  // Let's check if the browser supports notifications
 		  if (!("Notification" in window)) {
 			alert("This browser does not support desktop notification");
@@ -134,7 +144,12 @@ function clickCounter() {
 		  else if (Notification.permission === "granted") {
 			// If it's okay let's create a notification
 			<!-- var options = { body: randomQuote, icon: 'img/sad_head.png', } -->
-			var n = new Notification(message); 
+			var n = new Notification(user.username, {body: message, icon: "img.jpg" }); 
+			
+			//click focus window chat and close notification popup
+			n.onclick = function(){ window.focus(); this.close(); };
+			
+			//set time out close popup notification
 			setTimeout(n.close.bind(n), 5000); 
 			
 		  }
@@ -143,8 +158,8 @@ function clickCounter() {
 		  else if (Notification.permission !== 'denied') {
 			Notification.requestPermission(function (permission) {
 			  // If the user accepts, let's create a notification
-			  if (permission === "granted") {
-				var n = new Notification(message); 
+			  if (permission === "granted") { 
+				var n = new Notification(user.username, {body: message, icon: "img.jpg" }); 
 				setTimeout(n.close.bind(n), 5000);
 			  }
 			});
@@ -176,6 +191,7 @@ function clickCounter() {
 		$(window).blur(newUpdate);
 
 		$(window).focus(function() {
+			$('#msg').focus();
 			clearInterval(update);
 			setInterval(function() {
 				document.title = title;
@@ -192,20 +208,35 @@ function clickCounter() {
 		socket.on('nickname', function (data) {
 				$('#urnickname').append(data.toString());
 		});
-		//new message
+		//socket all chat
+		socket.on('showallchat', function (messages) {
+			str_message = "";
+			for (var i= 0;i< messages.length;i++) {
+				str_message += '<b>'+ escaped(messages[i].ipclient) + ':</b> ' + escaped(messages[i].message) + "<br/>" + escaped(messages[i].timechat) + "<br/>";
+			}
+			$('#messages').append(str_message);
 		
+		});
+		
+		//new message
+		var userNotification;
 		socket.on('updatechat', function (user, data) {
 				count ++;
 				
 				if(ipClient != user.ipClient){
-					notifyMe(data);
+					notifyMe(user,data);
 				}
-				$('#messages').append('<b>'+ escaped(user.username) + ':</b> ' + escaped(data) + "<br/>");
+				userNotification = user.username;
+				<!-- $('#ipuser').val(user.ipClient); -->
+				<!-- $('#msg').val(data); -->
+				<!-- $('#datechat').val(user.timechat); -->
+				$('#messages').append('<b>'+ escaped(user.username) + ':</b> ' + escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>");
 				console.log(user.ipClient);
 				console.log(ipClient);
 		});
 		
 		//image
+		
 		socket.on('updateimage', function (data) {
 				$('#img1').append('<img src="' + data.toString() + '"/>');
 				console.log(data.toString());
@@ -228,18 +259,20 @@ function clickCounter() {
 		  
 		  
 		  emojify.setConfig({
+			emojify_tag_type : 'div',           // Only run emojify.js on this element
+			only_crawl_id    : null,            // Use to restrict where emojify.js applies
+			img_dir          : './emotion/images/emoji',  // Directory for emoji images
+			ignored_tags     : {                // Ignore the following tags
+				'SCRIPT'  : 1,
+				'TEXTAREA': 1,
+				'A'       : 1,
+				'PRE'     : 1,
+				'CODE'    : 1
+			}
+		});
+// send message ajax
+		
 
-    emojify_tag_type : 'div',           // Only run emojify.js on this element
-    only_crawl_id    : null,            // Use to restrict where emojify.js applies
-    img_dir          : './emotion/images/emoji',  // Directory for emoji images
-    ignored_tags     : {                // Ignore the following tags
-        'SCRIPT'  : 1,
-        'TEXTAREA': 1,
-        'A'       : 1,
-        'PRE'     : 1,
-        'CODE'    : 1
-    }
-});
           // when the client hits ENTER on their keyboard
           $('#msg').keypress(function(e) {
             if(e.which == 13) {
@@ -251,6 +284,19 @@ function clickCounter() {
 				};
 				emojify.run(document.getElementById('messages'));
               // tell server to execute 'sendchat' and send along one parameter
+			  $('#myForm').submit(function(e){
+				 e.preventDefault(); 
+				 var url=$(this).attr('action'), data=$(this).serialize(); 
+				$.ajax({ 
+					url:url, 
+					type:'post', 
+					data:data, 
+					success:function()
+					{ 
+					//whatever you wanna do after the form is successfully submitted 
+
+					} }); 
+				});
               socket.emit('sendchat', messageDetails);
             }
           });
@@ -271,6 +317,8 @@ function clickCounter() {
               // tell server to execute 'sendchat' and send along one parameter
               socket.emit('sendchat', messageDetails);
           });
+		  
+		  
         });
 
 	</script>

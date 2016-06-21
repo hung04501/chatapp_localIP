@@ -1,14 +1,20 @@
-var express = require('express');
-var mongodb = require('mongodb');
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
+var app = require('./app');
+var Message=require('./models/message');
 
-var app = express()
+app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 5000);
+var express = require('express');
+
+var app = require('./app');
+
+app.set('port', process.env.PORT || 5000);
+
 var fs = require('fs');
-var app = express(),
-    server = require('http').createServer(app),
+var server = require('http').createServer(app),
     io = require('socket.io').listen(server);
 	
-var port = 5000;
-app.set('port', port);
+
 
 
 app.get('/', function(resuest, response) {
@@ -18,36 +24,48 @@ app.get('/', function(resuest, response) {
 // app.use(express.static('emotion'));
 app.use('/emotion', express.static('emotion'));
 
+//get currentday
+
+var today = new Date();
+var miliseconds = today.getTime();
+
+console.log(miliseconds);
+
+
+
+
+
 //socket
 var UserDetails = {};
 io.sockets.on('connection', function(socket) {
+		Message.find(function(err, messages) {
+		  if (err) return console.error(err);
+		  io.sockets.emit('showallchat', messages);
+		});
+	
 	socket.on('sendchat', function (data) {
 		console.log(data);
 		 UserDetails.ipClient = data.ipClient;
 		 UserDetails.username = getProperty(data.ipClient);
+		 UserDetails.timechat = miliseconds;
+		 
+		 var message=new Message({
+			ipclient:data.ipClient,
+			message:data.message,
+			timechat:miliseconds
+		 });
+        message.save(function(err, thor) {
+		  if (err) return console.error(err);
+		  console.dir(thor);
+		});
 		io.sockets.emit('updatechat',UserDetails, data.message);
 	});
   
-  /*
-  io.sockets.on('connection', function(socket) {
-	socket.on('sendchat', function (data) {
-		io.sockets.emit('updatechat', socket.username, data);
-	});
-  
-  socket.on('adduser', function(username) {
-		socket.username = username;
-		socket.broadcast.emit('new-user', username);
-	});*/
-	
- //get ipclient
- // socket.on('ipclient', function(ipclient) {
  
-	// UserDetails = {  
-		// ipClient : ipclient,  
-		// username : getProperty(ipclient)  
-		// };
-	// });
 });
+
+
+
 
 //map ip client
 var map = new Object(); // or var map = {};
@@ -65,8 +83,8 @@ rl.on('line', function (line) {
   //set nickname to ip
   map[ipuser] = nickname;
   
-  console.log(getProperty(ipuser)+'\n');
-  console.log(map.getKeyByValue(nickname)+'\n');
+  //console.log(getProperty(ipuser)+'\n');
+  //console.log(map.getKeyByValue(nickname)+'\n');
 });
 
 //get value map theo key
@@ -74,7 +92,8 @@ var getProperty = function get(k) {
     return map[k];
 }
 //get key from value
-Object.prototype.getKeyByValue = function( value ) {
+Object.defineProperty( Object.prototype, 'getKeyByValue', {
+    value: function() {
     for( var prop in this ) {
         if( this.hasOwnProperty( prop ) ) {
              if( this[ prop ] === value )
@@ -82,9 +101,9 @@ Object.prototype.getKeyByValue = function( value ) {
         }
     }
 }
-
+});
 
 //port
-server.listen(port, function () {
+server.listen(app.get('port'), function () {
   console.log('Listening on port ' + server.address().port)
 });
