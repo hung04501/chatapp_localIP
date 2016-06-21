@@ -15,11 +15,17 @@ app.get('/', function(resuest, response) {
   response.sendFile(__dirname+'/index.html');
 });
 
-//socket
+// app.use(express.static('emotion'));
+app.use('/emotion', express.static('emotion'));
 
+//socket
+var UserDetails = {};
 io.sockets.on('connection', function(socket) {
 	socket.on('sendchat', function (data) {
-		io.sockets.emit('updatechat',socket.username, data);
+		console.log(data);
+		 UserDetails.ipClient = data.ipClient;
+		 UserDetails.username = getProperty(data.ipClient);
+		io.sockets.emit('updatechat',UserDetails, data.message);
 	});
   
   /*
@@ -34,9 +40,13 @@ io.sockets.on('connection', function(socket) {
 	});*/
 	
  //get ipclient
- socket.on('ipclient', function(ipclient) {
-		socket.username = getProperty(ipclient);
-	});
+ // socket.on('ipclient', function(ipclient) {
+ 
+	// UserDetails = {  
+		// ipClient : ipclient,  
+		// username : getProperty(ipclient)  
+		// };
+	// });
 });
 
 //map ip client
