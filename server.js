@@ -38,28 +38,53 @@ console.log(miliseconds);
 //socket
 var UserDetails = {};
 io.sockets.on('connection', function(socket) {
+		//show all chat
 		Message.find(function(err, messages) {
 		  if (err) return console.error(err);
 		  io.sockets.emit('showallchat', messages);
 		});
-	
+	//get message from client
 	socket.on('sendchat', function (data) {
 		console.log(data);
 		 UserDetails.ipClient = data.ipClient;
 		 UserDetails.username = getProperty(data.ipClient);
 		 UserDetails.timechat = miliseconds;
-		 
+		//find last record in DB
+		var cursor  = Message.find().limit(1).sort({ $natural : -1 });
+		  cursor.exec(function(err, results) {
+			if (err) throw err;
+			UserDetails.same = data.ipClient == results[0].ipClient ? true :  false;
+		  });
+		//message save to DB
 		 var message=new Message({
-			ipclient:data.ipClient,
+			ipClient:data.ipClient,
+			clientName:getProperty(data.ipClient),
 			message:data.message,
 			timechat:miliseconds
 		 });
+		 //save db mongoose
         message.save(function(err, thor) {
 		  if (err) return console.error(err);
 		  console.dir(thor);
 		});
 		io.sockets.emit('updatechat',UserDetails, data.message);
 	});
+  
+	  //join a room
+	  socket.on('subscribe_room', function(room) { 
+			console.log('joining room', room);
+			socket.join(room); 
+		})
+	//leave room
+		socket.on('unsubscribe_room', function(room) {  
+			console.log('leaving room', room);
+			socket.leave(room); 
+		})
+	//send to joined room 
+		socket.on('sendmsg_room', function(data) {
+			console.log('sending message');
+			io.sockets.in(data.room).emit('message_room', data);
+		});
   
  
 });

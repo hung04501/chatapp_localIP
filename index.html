@@ -16,7 +16,9 @@
 		height :50px;
 	  }
 	  .container{
-		max-height : 300px;
+		max-height: 700px;
+		background-color: pink;
+		overflow: auto;
 	  }
     </style>
 	<link rel="stylesheet" href="./emotion/css/basic/emojify.css" />
@@ -25,9 +27,11 @@
 	<script src="./emotion/jquery-latest.min.js"></script>
 	
 	
-
+	
 	<script>
-//get client ip 
+//scroll
+
+
 // NOTE: window.RTCPeerConnection is "not a constructor" in FF22/23
 var RTCPeerConnection = /*window.RTCPeerConnection ||*/ window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
 var ipClient;
@@ -56,8 +60,6 @@ if (RTCPeerConnection) (function () {
         var displayAddrs = Object.keys(addrs).filter(function (k) { return addrs[k]; });
         document.getElementById('list').textContent = displayAddrs.join(" or perhaps ") ;
 		ipClient = displayAddrs.join(" or perhaps ") ;
-		//send ip client to server
-		//socket.emit('ipclient', displayAddrs.join(" or perhaps ") || "n/a");
 		
     }
     
@@ -83,58 +85,23 @@ if (RTCPeerConnection) (function () {
 
 		
 </script>
-
-<script>
-function clickCounter() {
-    if(typeof(Storage) !== "undefined") {
-        if (sessionStorage.clickcount) {
-            sessionStorage.clickcount = Number(sessionStorage.clickcount)+1;
-        } else {
-            sessionStorage.clickcount = 1;
-        }
-        document.getElementById("result").innerHTML = "You have clicked the button " + sessionStorage.clickcount + " time(s) in this session.";
-    } else {
-        document.getElementById("result").innerHTML = "Sorry, your browser does not support web storage...";
-    }
-}
-
-
-</script>
-
   </head>
   <body id="site-body">
-  Your network IP is: <h1 id="list"></h1> Make the locals proud.
-   My nicknam is : <h1 id="urnickname"></h1> 
-   
-   <p><button onclick="clickCounter()" type="button">Click me!</button></p>
-<div id="result"></div>
-<p>Click the button to see the counter increase.</p>
-<p>Close the browser tab (or window), and try again, and the counter is reset.</p>
-   
-   
-<!--<div class="container">
-  <form enctype="multipart/form-data" action="/upload" method="post">
-	  <input type="file" name="photo" multiple />
-	  <input type="submit" value="Upload Image" name="submit" />
-	</form>
-</div>-->
-  <div class="container">
+  <h1>WELCOME TO CHAT ROOM <br/></h1>
+  Your network IP is: <h2 id="list"></h2> 
+   <div class="container" style="width:20%;float:left;background-color:green">
+   fsfsf
+</div>   
+  <div class="container" style="width:80%;float:right">
   <div id="img1"></div> 
 	<div id="messages"></div>
-	  <!--<input id="regusr"/><button id="btnReg">Register</button>-->
-	  <!-- <form  action="/api/messages" method="post" id="myForm"> -->
-		<input type="hidden" id="ipuser" name="ipclient" >
-		  <input id="msg" name="message"/><button id="btnsend">Send</button>
-		  <input type="hidden" id="datechat" name ="timechat">
-	  <!-- </form> -->
+	 
 	  <div id="my-element"></div>
 	  
 	<script>
-	
-		//$(window).focus(function(){ //set focus to our text :D });
-		//notification
 		
-				function notifyMe(user,message) {
+		//notification
+		function notifyMe(user,message) {
 		  // Let's check if the browser supports notifications
 		  if (!("Notification" in window)) {
 			alert("This browser does not support desktop notification");
@@ -208,11 +175,17 @@ function clickCounter() {
 		socket.on('nickname', function (data) {
 				$('#urnickname').append(data.toString());
 		});
-		//socket all chat
+		//show all chat
 		socket.on('showallchat', function (messages) {
 			str_message = "";
-			for (var i= 0;i< messages.length;i++) {
-				str_message += '<b>'+ escaped(messages[i].ipclient) + ':</b> ' + escaped(messages[i].message) + "<br/>" + escaped(messages[i].timechat) + "<br/>";
+			if (messages.length) {
+				str_message += '<b>'+ escaped(messages[0].clientName) + ':</b> ' + escaped(messages[0].message) + "<br/>" + escaped(messages[0].timechat) + "<br/>";
+			}
+			for (var i= 1;i< messages.length;i++) {
+				if(messages[i].clientName != messages[i-1].clientName) {
+					str_message += '<b>'+ escaped(messages[i].clientName) + ':';
+				}
+				str_message += '</b> ' + escaped(messages[i].message) + "<br/>" + escaped(messages[i].timechat) + "<br/>";
 			}
 			$('#messages').append(str_message);
 		
@@ -222,57 +195,64 @@ function clickCounter() {
 		var userNotification;
 		socket.on('updatechat', function (user, data) {
 				count ++;
-				
+				str_msg = "";
+				//send all exception user 
 				if(ipClient != user.ipClient){
 					notifyMe(user,data);
 				}
+				//check last client send msg
+				if(user.same) {
+					str_msg+='</b> ' + escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
+				} else{
+					str_msg+='<b>'+ escaped(user.username) + ':</b> ';
+				}
+				$('#messages').append(str_msg);
+				
+				
 				userNotification = user.username;
-				<!-- $('#ipuser').val(user.ipClient); -->
-				<!-- $('#msg').val(data); -->
-				<!-- $('#datechat').val(user.timechat); -->
-				$('#messages').append('<b>'+ escaped(user.username) + ':</b> ' + escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>");
+				
+				//constant emojify
+				emojify.setConfig({
+					emojify_tag_type : 'div',           // Only run emojify.js on this element
+					only_crawl_id    : null,            // Use to restrict where emojify.js applies
+					img_dir          : './emotion/images/emoji',  // Directory for emoji images
+					ignored_tags     : {                // Ignore the following tags
+						'SCRIPT'  : 1,
+						'TEXTAREA': 1,
+						'A'       : 1,
+						'PRE'     : 1,
+						'CODE'    : 1
+					}
+				});
+				
+				//run emojify
+				emojify.run(document.getElementById('messages'));
+				//scroll bottom when add more text
+				var objDiv = $('.container');
+				if (objDiv.length > 0){
+					objDiv[0].scrollTop = objDiv[0].scrollHeight;
+				}
 				console.log(user.ipClient);
 				console.log(ipClient);
 		});
-		
-		//image
-		
-		socket.on('updateimage', function (data) {
-				$('#img1').append('<img src="' + data.toString() + '"/>');
-				console.log(data.toString());
-		});
-		
 
-		
+			
 		 $(function(){
-		 
-		 /*
-		 $('#regusr').keypress(function(e) {
-            if(e.which == 13) {
-              var username_i = $('#regusr').val();
-              $('#regusr').val('');
-              // tell server to execute 'register' and send along one parameter
-              socket.emit('adduser', username_i);
-            }
-          });
-		  */
-		  
-		  
-		  emojify.setConfig({
-			emojify_tag_type : 'div',           // Only run emojify.js on this element
-			only_crawl_id    : null,            // Use to restrict where emojify.js applies
-			img_dir          : './emotion/images/emoji',  // Directory for emoji images
-			ignored_tags     : {                // Ignore the following tags
-				'SCRIPT'  : 1,
-				'TEXTAREA': 1,
-				'A'       : 1,
-				'PRE'     : 1,
-				'CODE'    : 1
-			}
-		});
-// send message ajax
-		
+			//join room
+			 socket.on('message_room', function (data) {
+			  console.log(data);
+			 });
 
+			 socket.emit('subscribe_room', 'roomOne');
+			 socket.emit('subscribe_room', 'roomTwo');
+
+			 $('#send').click(function() {
+			  var room = $('#room').val(),
+			   message = $('#message').val();
+
+			  socket.emit('send_room', { room: room, message: message });
+			 });
+			 //end join room
           // when the client hits ENTER on their keyboard
           $('#msg').keypress(function(e) {
             if(e.which == 13) {
@@ -282,9 +262,9 @@ function clickCounter() {
 				ipClient : ipClient,  
 				message : message 
 				};
-				emojify.run(document.getElementById('messages'));
+				
               // tell server to execute 'sendchat' and send along one parameter
-			  $('#myForm').submit(function(e){
+			  /*$('#myForm').submit(function(e){
 				 e.preventDefault(); 
 				 var url=$(this).attr('action'), data=$(this).serialize(); 
 				$.ajax({ 
@@ -296,8 +276,12 @@ function clickCounter() {
 					//whatever you wanna do after the form is successfully submitted 
 
 					} }); 
-				});
+				});*/
               socket.emit('sendchat', messageDetails);
+
+			
+			  
+			
             }
           });
 		  
@@ -310,12 +294,9 @@ function clickCounter() {
 				ipClient : ipClient,  
 				message : message 
 			};
-			
-			
-			
-			emojify.run(document.getElementById('messages'));
               // tell server to execute 'sendchat' and send along one parameter
               socket.emit('sendchat', messageDetails);
+			 
           });
 		  
 		  
@@ -324,7 +305,25 @@ function clickCounter() {
 	</script>
 	
 	</div>
+	<div style="clear:both;float:right">
+	<input type="hidden" id="ipuser" name="ipclient" >
+		  <input id="msg" name="message"/><button id="btnsend">Send</button>
+		  <input type="hidden" id="datechat" name ="timechat">
+	</div>
+	<script>
+
+			
+				var objDiv = $('.container');
+				//alert(objDiv[0].scrollTop);
+				if (objDiv.length > 0){
+					objDiv.scrollTop = objDiv.scrollHeight;
+				}
+
+	
+	
+	</script>
   </body>
+  
 </html>
 
 
