@@ -45,7 +45,7 @@ io.sockets.on('connection', function(socket) {
 		});
 	//get message from client
 	socket.on('sendchat', function (data) {
-		console.log(data);
+		console.log('-----------------------------'+data);
 		 UserDetails.ipClient = data.ipClient;
 		 UserDetails.username = getProperty(data.ipClient);
 		 UserDetails.timechat = miliseconds;
@@ -53,7 +53,9 @@ io.sockets.on('connection', function(socket) {
 		var cursor  = Message.find().limit(1).sort({ $natural : -1 });
 		  cursor.exec(function(err, results) {
 			if (err) throw err;
-			UserDetails.same = data.ipClient == results[0].ipClient ? true :  false;
+			UserDetails.same = data.ipClient == results[0].ipClient ? true : false;
+			console.log('ip same :'+UserDetails.same);
+			io.sockets.emit('updatechat',UserDetails, data.message);
 		  });
 		//message save to DB
 		 var message=new Message({
@@ -67,7 +69,6 @@ io.sockets.on('connection', function(socket) {
 		  if (err) return console.error(err);
 		  console.dir(thor);
 		});
-		io.sockets.emit('updatechat',UserDetails, data.message);
 	});
   
 	  //join a room

@@ -181,6 +181,7 @@ if (RTCPeerConnection) (function () {
 		});
 		//show all chat
 		socket.on('showallchat', function (messages) {
+			
 			str_message = "";
 			if (messages.length) {
 				str_message += '<b>'+ escaped(messages[0].clientName) + ':</b> ' + escaped(messages[0].message) + "<br/>" + escaped(messages[0].timechat) + "<br/>";
@@ -191,7 +192,7 @@ if (RTCPeerConnection) (function () {
 				}
 				str_message += '</b> ' + escaped(messages[i].message) + "<br/>" + escaped(messages[i].timechat) + "<br/>";
 			}
-			$('#messages').append(str_message);
+			$('#messages').html(str_message);
 		
 		});
 		
@@ -205,12 +206,14 @@ if (RTCPeerConnection) (function () {
 					notifyMe(user,data);
 				}
 				//check last client send msg
+				console.log(user.same);
 				if(user.same) {
 					str_msg+='</b> ' + escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
-				} else{
-					str_msg+='<b>'+ escaped(user.username) + ':</b> ';
+				} else {
+					str_msg+='<b>' + escaped(user.username) + ':</b> '+ escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
 				}
 				$('#messages').append(str_msg);
+				console.log(str_msg);
 				
 				
 				userNotification = user.username;
