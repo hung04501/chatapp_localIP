@@ -83,7 +83,7 @@ io.sockets.on('connection', function(socket) {
 	//send to joined room 
 		socket.on('sendmsg_room', function(data) {
 			console.log('sending message');
-			io.sockets.in(data.room).emit('message_room', data);
+			io.sockets.in(data.room).emit('message_room', data.message);
 		});
   
  
