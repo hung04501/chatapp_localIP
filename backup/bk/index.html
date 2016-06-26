@@ -5,9 +5,9 @@
 	 <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      <!-- form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; } -->
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
@@ -15,18 +15,52 @@
 		width :50px;
 		height :50px;
 	  }
+	  #listuser{
+		width:20%;float:left;
+		height:85%;border-right: 1px solid #AFCBD8;
+		display:block;
+		margin: 0 auto;
+		  overflow: hidden;
+		  position: absolute;
+		  text-align: center;"
+	  }
 	  .container{
-		max-height: 700px;
+		max-height: 450px;
 		background-color: #fff;
 		overflow: auto;
 	  }
+	  #header{
+		width:100%;
+		height:85%;border-bottom: 1px solid #AFCBD8;
+		display:block;
+	  }
+	  #ui-input input { border: 0; padding: 10px; width: 70%; margin-right: .5%;float:left;margin-left: -80px;
+height: 60px; }
 	  
+	  #ui-input{
+	  float:right;
+	  padding: 3px;  
+	  bottom: 0; 
+	  width: 70%; 
+	  }
+	  #btnsend{
+		background-color: #fff;
+		border: none;
+		float: right;
+		margin-right: 150px;
+		  width :63px;
+		  height:63px;
+		  background-image:url(./emotion/images/emoji/btnsend_unactive.png);
+	  }
+	  <!-- #btnsend:hover{
+	  <!-- background-image:url(./emotion/images/emoji/btnsend_active.png);
+	  } -->
 	  
 	  .skype-parent{
   font:         14px/1.23 sans-serif;
   display:      table;
   table-layout: fixed;
-  width:        100%;
+  width:        70%;
   border-collapse: separate;
   border-spacing: 0 10px;
 }
@@ -156,14 +190,15 @@ if (RTCPeerConnection) (function () {
 </script>
   </head>
   <body id="site-body">
-  <h1>WELCOME TO CHAT ROOM <br/></h1>
+  <div id="header">
+	<h1>WELCOME TO CHAT ROOM <br/></h1>
   Your network IP is: <h2 id="list"></h2> 
-  
-   <div id="listuser" style="width:20%;float:left;background-color:green">
-	   fsfsf
-		<div id="room" value="roomOne">roomOne</div>
-		<div id="roomAll" value="roomOne">roomAll</div>
-	</div>   
+  </div>
+  <div id="listuser">
+	  <p style="background-color:#c7edfc;">UserName<p>
+<!-- 		<div id="room" value="roomOne">roomOne</div>
+		<div id="roomAll" value="roomOne">roomAll</div> -->
+  </div>
   <div class="container" style="width:80%;float:right">
   
 	<div id="messages"></div>
@@ -224,29 +259,25 @@ if (RTCPeerConnection) (function () {
 		
 		
 		//update in tab browser
-		var iconNew = 'emotion/images/emoji/favicon-dot.ico';
+		var iconNew = './emotion/images/emoji/favicon-dot.ico';
 
 
-		function changeFavicon() {
-			document.getElementById('favicon').href = iconNew;
-		}
 		
 		var count = 0;
 		var title = document.title;
 		var update;
-		var updateFavicon;
 		function changeTitle() {
 			if(count > 0) {
 				var newTitle = '(' + count + ') ' + title;
 				document.title = newTitle;
-				
+				document.getElementById('favicon').href = iconNew;
 			}
 		}
 
 		function newUpdate() {
 			count = 0;
 			update = setInterval(changeTitle, 1000);
-			updateFavicon = setInterval(changeFavicon, 1000);
+			//updateFavicon = setInterval(changeFavicon, 1000);
 		}
 		
 		//clear notification when user active
@@ -255,11 +286,9 @@ if (RTCPeerConnection) (function () {
 		$(window).focus(function() {
 			$('#msg').focus();
 			clearInterval(update);
-			setTimeout(function() { 
-				clearInterval( updateFavicon ); 
-			}, 2000);
 			setInterval(function() {
 				document.title = title;
+				document.getElementById('favicon').href = "";
 			},2000);
 			count = 0;
 		});
@@ -424,7 +453,7 @@ if (RTCPeerConnection) (function () {
 
 			////////////////////Trailing///////////////////////////////////////////////
 		 $(function(){
-			
+			$('#msg').val('');
 			//join room
 			 socket.on('message_room', function (data) {
 			  console.log(data);
@@ -449,39 +478,56 @@ if (RTCPeerConnection) (function () {
 			  socket.emit('sendmsg_room', { room: room, message: message });
 			 });
 			 //end join room
-			 ////////////////////Trailing//////////////////////////////////////////////
+			 ////////////////////EndTrailing//////////////////////////////////////////////
 			 
+			 //check active btnsend
+			$('#msg').keyup(function() {
+				var message = $('#msg').val();
+				var buttonSend = document.getElementById("btnsend");
+			  if(message.trim()!="" && message.length >0){
+			   imageUrl = './emotion/images/emoji/btnsend_active.png';
+				$('#btnsend').css('background-image','url(' + imageUrl + ')');
+				buttonSend.disabled = false;
+			  } else {
+				imageUrl = './emotion/images/emoji/btnsend_unactive.png';
+				$('#btnsend').css('background-image','url(' + imageUrl + ')');
+				buttonSend.disabled = true;
+			  }
+				
+			});
           // when the client hits ENTER on their keyboard
           $('#msg').keypress(function(e) {
-            if(e.which == 13) {
-              var message = $('#msg').val();
-              $('#msg').val('');
-			  var messageDetails = {  
-				ipClient : ipClient,  
-				message : message 
-				};
-				
-              // tell server to execute 'sendchat' and send along one parameter
-			  /*$('#myForm').submit(function(e){
-				 e.preventDefault(); 
-				 var url=$(this).attr('action'), data=$(this).serialize(); 
-				$.ajax({ 
-					url:url, 
-					type:'post', 
-					data:data, 
-					success:function()
-					{ 
-					//whatever you wanna do after the form is successfully submitted 
+			var message = $('#msg').val().trim();
+			if(message!="" && message.length >0){
+				if(e.which == 13) {
+				  $('#msg').val('');
+				  var messageDetails = {  
+					ipClient : ipClient,  
+					message : message 
+					};
+					
+				  // tell server to execute 'sendchat' and send along one parameter
+				  /*$('#myForm').submit(function(e){
+					 e.preventDefault(); 
+					 var url=$(this).attr('action'), data=$(this).serialize(); 
+					$.ajax({ 
+						url:url, 
+						type:'post', 
+						data:data, 
+						success:function()
+						{ 
+						//whatever you wanna do after the form is successfully submitted 
 
-					} }); 
-				});*/
-              socket.emit('sendchat', messageDetails);
-            }
+						} }); 
+					});*/
+				  socket.emit('sendchat', messageDetails);
+				}
+			}
           });
 		  
 		  // when the client hits ENTER on their keyboard
           $('#btnsend').click(function(e) {
-              var message = $('#msg').val();
+              var message = $('#msg').val().trim();
               $('#msg').val('');
 			  
 			  var messageDetails = {  
@@ -494,6 +540,7 @@ if (RTCPeerConnection) (function () {
           });
 		  
 		  
+		  
 		
         });
 		
@@ -503,10 +550,10 @@ if (RTCPeerConnection) (function () {
 	</script>
 	
 	</div>
-	<div style="clear:both;float:right">
+	<div style="clear:both;float:right" id="ui-input">
 	<input type="hidden" id="ipuser" name="ipclient" >
-		  <input id="msg" name="message"/><button id="btnsend">Send</button>
-		  <input id="msg_room" name="message"/><button id="btnsend_room">Send Room</button>
+		  <input id="msg" name="message" placeholder="chat here"/><button id="btnsend" disabled></button>
+	<!-- 	  <input id="msg_room" name="message"/><button id="btnsend_room">Send Room</button> -->
 		  <input type="hidden" id="datechat" name ="timechat">
 	</div>
   </body>
