@@ -96,7 +96,15 @@ io.sockets.on('connection', function(socket) {
 			console.log('sending message');
 			io.sockets.in(data.room).emit('message_room', data.message);
 		});
-  
+		
+		
+		
+		socket.on('isTyping', function(data) {
+			io.sockets.emit('updateTyping',data);
+		});
+		socket.on('longtyping', function(data) {
+			io.sockets.emit('updateTyping',data);
+		});
  
 });
 
