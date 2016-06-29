@@ -28,16 +28,28 @@ app.use('/emotion', express.static('emotion'));
 var UserDetails = {};
 var clients = [];
 io.sockets.on('connection', function(socket) {
+	
+		function isInArray(value, array) {
+		  return array.indexOf(value) > -1;
+		}
 		// //get list user online
-		// socket.on('useronline', function(ip) {
-			// clients.push(ip);
-			// console.log(clients);
-			// socket.emit('listuser_online',clients);
-		// });
-		// //who disconnect
-		// socket.on('disconnect', function(ip) {
-        // clients.splice(clients.indexOf(ip), 1);
-		// });
+		socket.on('useronline', function(ip) {
+			var usernameOnline = getProperty(ip);
+			if(ip!=null) {
+				if(!isInArray(usernameOnline,clients)){
+				clients.push(usernameOnline);
+				}
+			}
+			
+			io.sockets.emit('listuser_online',clients);
+			console.log(clients);
+			//clients=[];
+		});
+		//who disconnect
+		socket.on('disconnect', function(ip) {
+			var usernameOffline = getProperty(ip);
+			clients.splice(clients.indexOf(usernameOffline, 1));
+		});
 		
 		//console.log(clients);
 		//show all chat

@@ -163,7 +163,7 @@ if (RTCPeerConnection) (function () {
         var displayAddrs = Object.keys(addrs).filter(function (k) { return addrs[k]; });
         document.getElementById('list').textContent = displayAddrs.join(" or perhaps ").substring(0, 11);
 		ipClient = displayAddrs.join(" or perhaps ").substring(0, 11);
-		//socket.emit('useronline',displayAddrs.join(" or perhaps ").substring(0, 11));
+		
 		//ipClient = displayAddrs.join(" or perhaps ");
 		
     }
@@ -364,8 +364,21 @@ if (RTCPeerConnection) (function () {
 			 }
 		
 		//connect socket.io 
-		 var socket = io.connect('http://localhost:5000');
-		 
+		var conn_options = {
+		  'sync disconnect on unload':false
+		};
+		 var socket = io.connect('http://localhost:5000',conn_options);
+		 //send useronline
+		 function sendIpUserOnline(){
+			socket.emit('useronline',ipClient);
+		 }
+			setInterval(sendIpUserOnline,3000);
+		 socket.on('listuser_online', function (clients) {
+				$('#listuser').html('');
+			for(var i=0;i<clients.length;i++){
+				$('#listuser').append('<p>'+clients[i]+'</p></br>');
+			}
+		 });
 		//show all chat
 		socket.on('showallchat', function (messages) {
 			str_message = "";
