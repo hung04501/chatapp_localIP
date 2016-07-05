@@ -1,13 +1,13 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>Chat Room</title>
 	 <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
-      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      <!-- form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
       form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
-      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; } -->
       #messages { list-style-type: none; margin: 0; padding: 0; }
       #messages li { padding: 5px 10px; }
       #messages li:nth-child(odd) { background: #eee; }
@@ -15,23 +15,133 @@
 		width :50px;
 		height :50px;
 	  }
-	  .container{
+	  #listuser{
+		border-right: 1px solid #AFCBD8;
+		display:block;
+		margin: 0 auto;
+		  overflow: hidden;
+		  text-align: center;"
+	  }
+	  .container_chat{
 		max-height: 700px;
-		background-color: pink;
+		background-color: #fff;
 		overflow: auto;
 	  }
+	  #header{
+		width:100%;
+		height:85%;border-bottom: 1px solid #AFCBD8;
+		display:block;
+	  }
+	  #ui-input input { 
+	  border: 0;
+    padding: 10px;
+    width: 100%;
+    margin-right: .5%;
+    float: left;
+    margin-left: -220px;
+    height: 60px; }
+	  
+	  #ui-input{
+	  float:right;
+	  padding: 3px;  
+	  bottom: 0; 
+	  width: 70%; 
+	  }
+	  #btnsend{
+		background-color: #fff;
+		border: none;
+		float: right;
+		margin-right: 150px;
+		  width :63px;
+		  height:63px;
+		  background-image:url(./emotion/images/emoji/btnsend_unactive.png);
+	  }
+	  <!-- #btnsend:hover{
+	  <!-- background-image:url(./emotion/images/emoji/btnsend_active.png);
+	  } -->
+	  
+	  .skype-parent{
+  font:         14px/1.23 sans-serif;
+  display:      table;
+  table-layout: fixed;
+  width:        85%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+/* ROWS */
+
+.message{
+  display: table-row;
+}
+
+/* ALL CELLS */
+
+.message > *{
+  position:   relative;
+  box-sizing: border-box;
+  display:    table-cell;
+}
+.message img{
+  border-radius:  50%;
+  vertical-align: middle;
+}
+
+/* IMAGE CELL & TIME CELL */
+
+.message > div:nth-child(1),
+.message > div:nth-child(3){
+  width:      52px;
+  text-align: center;
+  font-size:  12px;
+  color:      #AFCBD8;
+}
+
+/* MESSAGE CELLS */
+
+.message p {
+  color:      #6E767C;
+  border-radius:4px;
+  padding: 12px 14px;
+  margin: 0 36px 0 0;
+  background: #c7edfc;
+}
+.message.user p {
+  margin: 0 0 0 36px;
+  background: #e5f7fd;
+}
+
+/* ARROWS */
+
+.message > div:nth-child(2):after {
+  position:   absolute;
+  content:    "";
+  width:      8px;
+  height:     8px;
+  background: #c7edfc;
+  left:       0;
+  top:        18px;
+  margin-left: -4px;
+  transform:  rotate(45deg); -webkit-transform: rotate(45deg);
+}
+
+.message.user > div:nth-child(2):after {
+  left:       100%;
+  background: #e5f7fd;
+}
+	  
+	  
     </style>
+	<link id="favicon" rel="icon"/>
 	<link rel="stylesheet" href="./emotion/css/basic/emojify.css" />
+	<link rel="stylesheet" href="./bootstrap/css/bootstrap.min.css" />
 	<script src="./emotion/emojify.js"></script>
 	<script src="http://192.168.100.113:5000/socket.io/socket.io.js"></script>
 	<script src="./emotion/jquery-latest.min.js"></script>
-	
-	
-	
+	<script src="./emotion/jquery-colors.min.js"></script>
+	<script src="./bootstrap/js/bootstrap.min.js"></script>
+
 	<script>
-//scroll
-
-
 // NOTE: window.RTCPeerConnection is "not a constructor" in FF22/23
 var RTCPeerConnection = /*window.RTCPeerConnection ||*/ window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
 var ipClient;
@@ -58,9 +168,9 @@ if (RTCPeerConnection) (function () {
         if (newAddr in addrs) return;
         else addrs[newAddr] = true;
         var displayAddrs = Object.keys(addrs).filter(function (k) { return addrs[k]; });
-        document.getElementById('list').textContent = displayAddrs.join(" or perhaps ") ;
-		ipClient = displayAddrs.join(" or perhaps ") ;
-		
+        document.getElementById('list').textContent = displayAddrs.join(" or perhaps ").substring(0,15);
+		//document.getElementById('list').textContent = displayAddrs.join("@");
+		ipClient = displayAddrs.join(" or perhaps ").substring(0,15);
     }
     
     function grepSDP(sdp) {
@@ -82,28 +192,39 @@ if (RTCPeerConnection) (function () {
     document.getElementById('list').innerHTML = "<code>ifconfig | grep inet | grep -v inet6 | cut -d\" \" -f2 | tail -n1</code>";
     document.getElementById('list').nextSibling.textContent = "In Chrome and Firefox your IP should display automatically, by the power of WebRTCskull.";
 }
-
-		
 </script>
   </head>
   <body id="site-body">
-  <h1>WELCOME TO CHAT ROOM <br/></h1>
-  Your network IP is: <h2 id="list"></h2> 
+  <div class="container">
+	<div class="row">
+		 <div class="col-sm-12">
+			  <div id="header">
+				<h1>WELCOME TO CHAT ROOM <br/></h1>
+			  Your network IP is: <h2 id="list"></h2> 
+			  </div>
+		</div>
+	</div>
   
-   <div id="listuser" style="width:20%;float:left;background-color:green">
-   fsfsf
-    <div id="room" value="roomOne">roomOne</div>
-	<div id="roomAll" value="roomOne">roomAll</div>
-</div>   
-  <div class="container" style="width:80%;float:right">
-  
-	<div id="messages"></div>
-	<div id="messages_room"></div>
-	 
-	  <div id="my-element"></div>
+  <div class="row">
+    <div class="col-sm-2">
+	  <div id="listuser">
+		  <p style="background-color:#c7edfc;">UserName<p>
+	  </div>
+	</div>
+	<div class="col-sm-10">
+	  <div class="container_chat">
+	  
+		<div id="messages"></div>
+		
+		<div class="skype-parent">
+		  <div class="message">
+			<div></div>
+			<div><p></p></div>
+			<div></div>
+		  </div>
+		</div> 
 	  
 	<script>
-		
 		//notification
 		function notifyMe(user,message) {
 		  // Let's check if the browser supports notifications
@@ -140,7 +261,12 @@ if (RTCPeerConnection) (function () {
 		  // want to be respectful there is no need to bother them any more.
 		}
 		
+		
+		
 		//update in tab browser
+		var iconNew = './emotion/images/emoji/favicon-dot.ico';
+
+
 		
 		var count = 0;
 		var title = document.title;
@@ -149,13 +275,14 @@ if (RTCPeerConnection) (function () {
 			if(count > 0) {
 				var newTitle = '(' + count + ') ' + title;
 				document.title = newTitle;
-				
+				document.getElementById('favicon').href = iconNew;
 			}
 		}
 
 		function newUpdate() {
 			count = 0;
 			update = setInterval(changeTitle, 1000);
+			//updateFavicon = setInterval(changeFavicon, 1000);
 		}
 		
 		//clear notification when user active
@@ -166,36 +293,156 @@ if (RTCPeerConnection) (function () {
 			clearInterval(update);
 			setInterval(function() {
 				document.title = title;
+				document.getElementById('favicon').href = "";
 			},2000);
+			//display highlight when have message unread.
+			for(var i=1;i<=count;i++){
+			
+				$("div.skype-parent > div.message:nth-last-child("+i+") >div").animate({color:'#faa523'}, 500, 
+				function(){ $(this).animate({ 'color' : '#AFCBD8' },500)})
+				
+				
+				$("div.skype-parent > div.message:nth-last-child("+i+") >div>p").animate({backgroundColor:'#ffcc00'}, 500, 
+				function(){ $(this).animate({ 'backgroundColor' : '#c7edfc'},500)})
+				
+				$("div.skype-parent > div.message:nth-last-child("+i+") >div>p").animate({color:'#faa523'}, 500, 
+				function(){ $(this).animate({ 'color' : '#6E767C' },500)})
+				
+				
+			}
+			
 			count = 0;
 		});
 		
 		//format message
 		function escaped(s) {
-          return $("<div></div>").html(s).html();
+          return $("<div></div>").text(s).html();
         }
-		 var socket = io.connect('http://192.168.100.113:5000');
-		//nickname
-		socket.on('nickname', function (data) {
-				$('#urnickname').append(data.toString());
-		});
+		//get day in week
+		function dayinWeek(num){
+			var weekday=new Array(7);
+			weekday[0]="Sunday";
+			weekday[1]="Monday";
+			weekday[2]="Tuesday";
+			weekday[3]="Wednesday";
+			weekday[4]="Thursday";
+			weekday[5]="Friday";
+			weekday[6]="Saturday";
+		return weekday[num];
+		}
+		//display time chat
+		function viewTimechat(datechat) {
+			var viewday = "";
+			var today = new Date();
+			var dif = today.getTime() - datechat.getTime();
+			var seconds_from_today_to_datechat = dif / 1000;
+			var seconds_Between_Dates = Math.abs(seconds_from_today_to_datechat);
+			//console.log(today.getDay());
+			//console.log(datechat.getDay());
+			//if()
+			if(seconds_Between_Dates > 82712 * 7) {
+				viewday = datechat.getDate() +'/'+ (datechat.getMonth()+1);
+			} else if(seconds_Between_Dates > 82712/2) {
+				viewday = dayinWeek(datechat.getDay());
+			} else {
+			    if(datechat.getMinutes() < 10) {
+					minute = '0' + datechat.getMinutes();
+				}else{
+					minute = datechat.getMinutes();
+				}
+				viewday = datechat.getHours() +':'+ minute;
+			}
+			return viewday;
+		}
+		//generate msg
+		function generate(msg,showname = true){
+		var msgOfuser = msg.ipClient == ipClient ? true : false;
+		var datechat = new Date(+msg.timechat);
+				var strVar="";
+				if(showname){
+					if(msgOfuser) {
+						strVar += "<div class=\"message user\">";
+					} else{
+						strVar += "<div class=\"message\">";
+					}
+					strVar += "    <div><\/div>";
+					strVar += "    <div><p>"+msg.message+"<\/p><\/div>";
+					strVar += "    <div>"+viewTimechat(datechat)+"<\/div>";
+					strVar += "  <\/div>";
+				} else {
+					if(msgOfuser) {
+						strVar += "<div class=\"message user\">";
+					} else {
+						strVar += "<div class=\"message\">";
+					}
+					strVar += "    <div>"+msg.clientName+"<\/div>";
+					strVar += "    <div><p>"+msg.message+"<\/p><\/div>";
+					strVar += "    <div>"+viewTimechat(datechat)+"<\/div>";
+					strVar += "  <\/div>";
+				}
+					return strVar;
+			 }
+		
+		//connect socket.io 
+		 var conn_options = {
+		  'sync disconnect on unload':false
+		};
+		 var socket = io.connect('http://192.168.100.113:5000',conn_options);
+		 
+		 //send useronline
+		 var sendIp = false;
+		 function sendIpUserOnline(){
+			socket.emit('useronline',ipClient);
+		 }
+		 if(!sendIp) {
+			setInterval(sendIpUserOnline,3000);
+		}
+		 socket.on('listuser_online', function (clients) {
+				$('#listuser').html('');
+			for(var i=0;i<clients.length;i++){
+				$('#listuser').append('<p>'+clients[i]+'</p></br>');
+			}
+			sendIp = true;
+			clearInterval(sendIpUserOnline);
+		 });
+		 
 		//show all chat
 		socket.on('showallchat', function (messages) {
-			
 			str_message = "";
 			if (messages.length) {
-				str_message += '<b>'+ escaped(messages[0].clientName) + ':</b> ' + escaped(messages[0].message) + "<br/>" + escaped(messages[0].timechat) + "<br/>";
+				str_message += generate(messages[0],false);
 			}
 			for (var i= 1;i< messages.length;i++) {
 				if(messages[i].clientName != messages[i-1].clientName) {
-					str_message += '<b>'+ escaped(messages[i].clientName) + ':';
+					str_message += generate(messages[i],false);
+				} else {
+					str_message += generate(messages[i],true);
 				}
-				str_message += '</b> ' + escaped(messages[i].message) + "<br/>" + escaped(messages[i].timechat) + "<br/>";
 			}
-			$('#messages').html(str_message);
-		
+			$('.skype-parent').html(str_message);
 		});
 		
+		
+		//generate msg when anybody update chat
+		function generateUpdatechat(user,msg,showname = true){
+		var msgOfuser = user.ipClient == ipClient ? true : false;
+		var datechat = new Date(+user.timechat);
+				var strVar="";
+				if(showname){
+					if(msgOfuser) {strVar += "<div class=\"message user\">";}else{strVar += "<div class=\"message\">";}
+					strVar += "    <div><\/div>";
+					strVar += "    <div><p>"+msg+"<\/p><\/div>";
+					strVar += "    <div>"+viewTimechat(datechat)+"<\/div>";
+					strVar += "  <\/div>";
+				} else {
+					if(msgOfuser) {strVar += "<div class=\"message user\">";}else{strVar += "<div class=\"message\">";}
+					strVar += "    <div>"+user.username+"<\/div>";
+					strVar += "    <div><p>"+msg+"<\/p><\/div>";
+					strVar += "    <div>"+viewTimechat(datechat)+"<\/div>";
+					strVar += "  <\/div>";
+				}
+					return strVar;
+			 }
 		//new message
 		var userNotification;
 		socket.on('updatechat', function (user, data) {
@@ -208,11 +455,14 @@ if (RTCPeerConnection) (function () {
 				//check last client send msg
 				console.log(user.same);
 				if(user.same) {
-					str_msg+='</b> ' + escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
+					//str_msg+='</b> ' + escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
+					str_msg += generateUpdatechat(user,data,true);
 				} else {
-					str_msg+='<b>' + escaped(user.username) + ':</b> '+ escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
+					//str_msg+='<b>' + escaped(user.username) + ':</b> '+ escaped(data) + "<br/>" + escaped(user.timechat) + "<br/>";
+					str_msg += generateUpdatechat(user,data,false);
 				}
-				$('#messages').append(str_msg);
+				$('.skype-parent').append(str_msg);
+				
 				console.log(str_msg);
 				
 				
@@ -235,7 +485,7 @@ if (RTCPeerConnection) (function () {
 				//run emojify
 				emojify.run(document.getElementById('messages'));
 				//scroll bottom when add more text
-				var objDiv = $('.container');
+				var objDiv = $('.container_chat');
 				if (objDiv.length > 0){
 					objDiv[0].scrollTop = objDiv[0].scrollHeight;
 				}
@@ -243,8 +493,35 @@ if (RTCPeerConnection) (function () {
 				console.log(ipClient);
 		});
 
-			
+		//add div update display anybody Typing
+		function isInArray(value, array) {
+		  return array.indexOf(value) > -1;
+		}
+		socket.on('updateStatusTyping', function (data,iptyping) {
+			console.log(iptyping);
+			if(!isInArray(ipClient,iptyping)){
+				if(iptyping.length > 2){
+					$('#statusTyping').html(data[0]+','+data[1]+'and'+(iptyping.length-2)+' is typing...');
+				} else if(iptyping.length == 2){
+					$('#statusTyping').html(data[0]+','+data[1]+' is typing...');
+				} else if(iptyping.length == 1){
+					$('#statusTyping').html(data[0]+' is typing...');
+				}
+			} 
+		});
+		socket.on('updateStatuslongTyping', function (data) {
+				$('#statusTyping').html(data);
+		
+		});
+		
+		
+		
+			////////////////////Trailing///////////////////////////////////////////////
 		 $(function(){
+			$('#msg').val('');
+			var win = $('.container_chat');
+			//win.scrollTop = win[0].scrollHeight;
+			win.animate({ scrollTop: 2577}, 1000);
 			//join room
 			 socket.on('message_room', function (data) {
 			  console.log(data);
@@ -269,46 +546,92 @@ if (RTCPeerConnection) (function () {
 			  socket.emit('sendmsg_room', { room: room, message: message });
 			 });
 			 //end join room
+			 ////////////////////EndTrailing//////////////////////////////////////////////
+			 //Load more message when scroll up
+			 
+			 var win = $('.container_chat');
+			var stepsize = 50;
+			// Each time the user scrolls
+			win.on('scroll', function() {
+				var scrollTop = $(this).scrollTop();
+				
+				console.log(stepsize);
+					if (scrollTop == 0 ) {
+						stepsize = stepsize + 50;
+						socket.emit('viewmore',parseInt(stepsize));
+					}
+			});
+			 
+			 
+			 //check active btnsend
+			$('#msg').keyup(function() {
+				var message = $('#msg').val();
+				var buttonSend = document.getElementById("btnsend");
+			  if(message.trim()!="" && message.length >0){
+			   imageUrl = './emotion/images/emoji/btnsend_active.png';
+				$('#btnsend').css('background-image','url(' + imageUrl + ')');
+				buttonSend.disabled = false;
+			  } else {
+				imageUrl = './emotion/images/emoji/btnsend_unactive.png';
+				$('#btnsend').css('background-image','url(' + imageUrl + ')');
+				buttonSend.disabled = true;
+			  }
+				
+			});
+			
+			//check typing
+			var typing = false;
+			var timeout = undefined;
+
+			function timeoutFunction(){
+			  typing = false;
+			  socket.emit('longTyping',"");
+			}
+
+			function onKeyDownNotEnter(){
+			  if(typing == false) {
+				typing = true;
+				socket.emit('isTyping',ipClient);
+				timeout = setTimeout(timeoutFunction, 1500);
+			  } else {
+				clearTimeout(timeout);
+				timeout = setTimeout(timeoutFunction, 1500);
+			  }
+
+			}
+			
           // when the client hits ENTER on their keyboard
           $('#msg').keypress(function(e) {
-            if(e.which == 13) {
-              var message = $('#msg').val();
-              $('#msg').val('');
-			  var messageDetails = {  
-				ipClient : ipClient,  
-				message : message 
-				};
-				
-              // tell server to execute 'sendchat' and send along one parameter
-			  /*$('#myForm').submit(function(e){
-				 e.preventDefault(); 
-				 var url=$(this).attr('action'), data=$(this).serialize(); 
-				$.ajax({ 
-					url:url, 
-					type:'post', 
-					data:data, 
-					success:function()
-					{ 
-					//whatever you wanna do after the form is successfully submitted 
+			var message = $('#msg').val().trim();
+			if(message!="" && message.length >0){
+				if(e.which == 13) {
+				  $('#msg').val('');
+				  var messageDetails = {  
+					ipClient : ipClient,  
+					message : $("<div>").text(message).html()
+					};
+					
+				  socket.emit('sendchat', messageDetails);
+				}
 
-					} }); 
-				});*/
-              socket.emit('sendchat', messageDetails);
-
-			
-			  
-			
-            }
+			}
+          });
+		  
+		  $('#msg').keyup(function(e) {
+				if(e.which == 13) {
+				} else{
+					onKeyDownNotEnter();
+				}
           });
 		  
 		  // when the client hits ENTER on their keyboard
           $('#btnsend').click(function(e) {
-              var message = $('#msg').val();
+              var message = $('#msg').val().trim();
               $('#msg').val('');
 			  
 			  var messageDetails = {  
 				ipClient : ipClient,  
-				message : message 
+				message : $("<div>").text(message).html()
 			};
               // tell server to execute 'sendchat' and send along one parameter
               socket.emit('sendchat', messageDetails);
@@ -316,29 +639,24 @@ if (RTCPeerConnection) (function () {
           });
 		  
 		  
+		
         });
-
+		
+		
+		
+		
 	</script>
 	
 	</div>
-	<div style="clear:both;float:right">
-	<input type="hidden" id="ipuser" name="ipclient" >
-		  <input id="msg" name="message"/><button id="btnsend">Send</button>
-		  <input id="msg_room" name="message"/><button id="btnsend_room">Send Room</button>
+	<div style="clear:both;float:right" id="ui-input">
+		<div  id="statusTyping"></div>
+			<input type="hidden" id="ipuser" name="ipclient" >
+		  <input id="msg" name="message" placeholder="chat here"/><button id="btnsend" disabled></button>
+	<!-- 	  <input id="msg_room" name="message"/><button id="btnsend_room">Send Room</button> -->
 		  <input type="hidden" id="datechat" name ="timechat">
+		  
 	</div>
-	<script>
-
-			
-				var objDiv = $('.container');
-				//alert(objDiv[0].scrollTop);
-				if (objDiv.length > 0){
-					objDiv.scrollTop = objDiv.scrollHeight;
-				}
-
-	
-	
-	</script>
+	</div>
   </body>
   
 </html>
