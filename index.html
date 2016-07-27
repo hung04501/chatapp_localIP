@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>Chat Room</title>
+	<meta name="viewport" content="width=device-width">
 	 <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font: 13px Helvetica, Arial; }
@@ -25,6 +26,9 @@
 	  .container_chat{
 		max-height: 700px;
 		background-color: #fff;
+		overflow: hidden;
+	  }
+	  .container_chat:hover{
 		overflow: auto;
 	  }
 	  #header{
@@ -35,7 +39,7 @@
 	  #ui-input input { 
 	  border: 0;
     padding: 10px;
-    width: 100%;
+    width: 90%;
     margin-right: .5%;
     float: left;
     margin-left: -220px;
@@ -105,6 +109,7 @@
   padding: 12px 14px;
   margin: 0 36px 0 0;
   background: #c7edfc;
+  word-break: break-all;
 }
 .message.user p {
   margin: 0 0 0 36px;
@@ -133,14 +138,22 @@
 	  
     </style>
 	<link id="favicon" rel="icon"/>
+	<link rel="stylesheet" href="./emotion/jquery.emojiarea.css">
+	<link rel="stylesheet" href="./emotion/fontello/css/fontello.css">
 	<link rel="stylesheet" href="./emotion/css/basic/emojify.css" />
+	<link rel="stylesheet" href="./emotion/jquery.mCustomScrollbar.min.css" />
 	<link rel="stylesheet" href="./bootstrap/css/bootstrap.min.css" />
 	<script src="./emotion/emojify.js"></script>
 	<script src="http://192.168.100.113:5000/socket.io/socket.io.js"></script>
 	<script src="./emotion/jquery-latest.min.js"></script>
 	<script src="./emotion/jquery-colors.min.js"></script>
+	<script src="./emotion/jquery.emojiarea.js"></script>
+	<script src="./emotion/packs/basic/emojis.js"></script>
 	<script src="./bootstrap/js/bootstrap.min.js"></script>
-
+	<script src="./emotion/jquery.emojiarea.js"></script>
+	<script src="./emotion/packs/basic/emojis.js"></script>
+	<script src="./emotion/jquery.mCustomScrollbar.concat.min.js"></script>
+	
 	<script>
 // NOTE: window.RTCPeerConnection is "not a constructor" in FF22/23
 var RTCPeerConnection = /*window.RTCPeerConnection ||*/ window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
@@ -212,10 +225,7 @@ if (RTCPeerConnection) (function () {
 	  </div>
 	</div>
 	<div class="col-sm-10">
-	  <div class="container_chat">
-	  
-		<div id="messages"></div>
-		
+	  <div class="container_chat" id="default-skin-demo">
 		<div class="skype-parent">
 		  <div class="message">
 			<div></div>
@@ -400,7 +410,7 @@ if (RTCPeerConnection) (function () {
 		 socket.on('listuser_online', function (clients) {
 				$('#listuser').html('');
 			for(var i=0;i<clients.length;i++){
-				$('#listuser').append('<p>'+clients[i]+'</p></br>');
+				$('#listuser').append('<li class="username-online">'+clients[i]+'</li></br>');
 			}
 			sendIp = true;
 			clearInterval(sendIpUserOnline);
@@ -420,6 +430,7 @@ if (RTCPeerConnection) (function () {
 				}
 			}
 			$('.skype-parent').html(str_message);
+			emojify.run();
 		});
 		
 		
@@ -483,7 +494,7 @@ if (RTCPeerConnection) (function () {
 				});
 				
 				//run emojify
-				emojify.run(document.getElementById('messages'));
+				emojify.run();
 				//scroll bottom when add more text
 				var objDiv = $('.container_chat');
 				if (objDiv.length > 0){
@@ -522,12 +533,27 @@ if (RTCPeerConnection) (function () {
 			var win = $('.container_chat');
 			//win.scrollTop = win[0].scrollHeight;
 			win.animate({ scrollTop: 2577}, 1000);
+			
+			
+            
 			//join room
 			 socket.on('message_room', function (data) {
 			  console.log(data);
 			  $('#messages_room').append(data);
 			 });
 			
+			//icon chat
+			
+			//$('#msg').emojiarea({wysiwyg: false});
+			
+			var $wysiwyg = $('#msg').emojiarea({wysiwyg: false});
+			var $wysiwyg_value = $('#msg-value');
+			
+			$wysiwyg.on('change', function() {
+				$wysiwyg_value.text($(this).val());
+			});
+			$wysiwyg.trigger('change');
+
 			
 			$('#room').click(function() {
 			 socket.emit('subscribe_room', 'roomOne');
@@ -558,6 +584,7 @@ if (RTCPeerConnection) (function () {
 				console.log(stepsize);
 					if (scrollTop == 0 ) {
 						stepsize = stepsize + 50;
+						win.animate({ scrollTop: 300}, 500);
 						socket.emit('viewmore',parseInt(stepsize));
 					}
 			});
@@ -612,17 +639,13 @@ if (RTCPeerConnection) (function () {
 					};
 					
 				  socket.emit('sendchat', messageDetails);
+				} else{
+					onKeyDownNotEnter();
 				}
 
 			}
           });
 		  
-		  $('#msg').keyup(function(e) {
-				if(e.which == 13) {
-				} else{
-					onKeyDownNotEnter();
-				}
-          });
 		  
 		  // when the client hits ENTER on their keyboard
           $('#btnsend').click(function(e) {
@@ -651,7 +674,7 @@ if (RTCPeerConnection) (function () {
 	<div style="clear:both;float:right" id="ui-input">
 		<div  id="statusTyping"></div>
 			<input type="hidden" id="ipuser" name="ipclient" >
-		  <input id="msg" name="message" placeholder="chat here"/><button id="btnsend" disabled></button>
+		  <input id="msg" name="message" placeholder="chat here" /><button id="btnsend" disabled></button>
 	<!-- 	  <input id="msg_room" name="message"/><button id="btnsend_room">Send Room</button> -->
 		  <input type="hidden" id="datechat" name ="timechat">
 		  

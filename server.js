@@ -149,7 +149,6 @@ io.sockets.on('connection', function(socket) {
 			io.sockets.in(data.room).emit('message_room', data.message);
 		});
   
- 
 });
 
 
