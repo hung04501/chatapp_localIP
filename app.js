@@ -13,7 +13,7 @@ var app = express();
 //Ideally you will obtain DB details from a config file
 
 
-var dbName='messageDB';
+var dbName='messageDBEditing';
 
 //provide a sensible default for local development
 mongodb_connection_string = 'mongodb://192.168.100.113:27017/' + dbName;

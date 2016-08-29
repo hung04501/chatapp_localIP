@@ -6,6 +6,7 @@
     "async": "^1.5.2",
     "body-parser": "^1.15.0",
     "cookie-parser": "^1.4.1",
+    "delivery": "0.0.4",
     "emojify.js": "^1.1.0",
     "express": "*",
     "google-auth-library": "^0.9.7",
@@ -17,7 +18,8 @@
     "refresh-token": "^0.1.0",
     "request": "^2.70.0",
     "request-ip": "^1.2.2",
-    "socket.io": "*"
+    "socket.io": "*",
+    "underscore": "^1.8.3"
   },
   "author": "developer"
 }

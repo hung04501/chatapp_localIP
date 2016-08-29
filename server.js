@@ -8,14 +8,22 @@ var express = require('express');
 
 var app = require('./app');
 
+var app1 =   express();
+
 app.set('port', process.env.PORT || 5000);
 
 var fs = require('fs');
 var server = require('http').createServer(app),
     io = require('socket.io').listen(server);
 	
+var _ = require('underscore')._;
 
-
+var request = require('request');
+var cheerio = require('cheerio');
+var multer  =   require('multer');
+var bodyParser =    require("body-parser");
+//send file
+dl = require('./emotion/lib/delivery.server');
 
 app.get('/', function(resuest, response) {
   response.sendFile(__dirname+'/index.html');
@@ -26,8 +34,11 @@ app.use('/emotion', express.static('emotion'));
 app.use('/bootstrap', express.static('bootstrap'));
 
 //socket
-var UserDetails = {};
+//var UserDetails = {};
+var inforLink= {};
 var clients = [];
+var people ={};
+var rooms ={};
 io.sockets.on('connection', function(socket) {
 		var record = 50;
 		function isInArray(value, array) {
@@ -36,10 +47,16 @@ io.sockets.on('connection', function(socket) {
 		//get list user online
 		socket.on('useronline', function(ip) {
 			var usernameOnline = getProperty(ip);
+			var ownerRoomID = inRoomID = null;
 			if(ip!=null) {
 				if(!isInArray(usernameOnline,clients)){
 				clients.push(usernameOnline);
 				
+				people[socket.id] = {"userName":usernameOnline,"ownerRoomID":ownerRoomID,"inRoom":inRoomID};
+				sizePeople = _.size(people);
+			sizeRooms = _.size(rooms);
+			io.sockets.emit("update-people", {people: people, count: sizePeople});
+
 				}
 				io.sockets.emit('listuser_online',clients);
 				console.log(clients);
@@ -56,15 +73,15 @@ io.sockets.on('connection', function(socket) {
 			console.log("user logout"+usernameOffline);
 		});
 		//view more record
-		socket.on('viewmore', function(numrecord) {
+		socket.on('viewmore', function(ipViewMore,numrecord) {
 			console.log(numrecord);
 			record = numrecord;
 			//show all chat
 			var cursord  = Message.find().limit(record).sort({$natural : -1,timechat: 'asc'});
 			  cursord.exec(function(err, messages) {
 				//if (err) return console.error(err);
-				//console.log(messages);
-				io.sockets.emit('showallchat', messages.reverse());
+				console.log('ipViewMore:'+ipViewMore);
+				io.sockets.emit('showMore',ipViewMore, messages.reverse());
 			  });
 		});
 		//show all chat
@@ -80,7 +97,35 @@ io.sockets.on('connection', function(socket) {
 		  // io.sockets.emit('showallchat', messages);
 		// }).limit(3).sort({timechat: 'asc'});
 	//get message from client
+	
+	//check message have link
+		function checkLink(msgLink){
+			return haveLink = msgLink.indexOf("http") !== -1 ||  msgLink.indexOf("https") !== -1;
+		}
+	
+	//get meta data before display message to Client
+	function getMetadata(msgHaveLink){
+		return new Promise(function(resolve, reject) {
+
+			var contentLink = {};
+			request(msgHaveLink, function (error, response, html) {
+			  if (!error && response.statusCode == 200) {
+				var $ = cheerio.load(html);
+
+				var title = $('meta[property="og:title"]').attr("content");
+				var description = $('meta[property="og:description"]').attr("content");
+				var img = $('meta[property="og:image"]').attr("content");
+				contentLink.title = title;
+				contentLink.description = description;
+				contentLink.img = img;
+				resolve(contentLink);
+			  }
+			});
+		});
+	}
+	//broadcast message for All Client
 	socket.on('sendchat', function (data) {
+		var UserDetails = {};
 		console.log('-----------------------------'+data);
 		//get currentday
 		var today = new Date();
@@ -91,28 +136,93 @@ io.sockets.on('connection', function(socket) {
 		 UserDetails.ipClient = data.ipClient;
 		 UserDetails.username = getProperty(data.ipClient);
 		 UserDetails.timechat = miliseconds;
-		//find last record in DB
-		var cursor  = Message.find().limit(1).sort({ $natural : -1 });
-		  cursor.exec(function(err, results) {
-			if (err) throw err;
-			if(results.length) {
-			UserDetails.same = data.ipClient == results[0].ipClient ? true : false;
-			console.log('ip same :'+UserDetails.same);
-			io.sockets.emit('updatechat',UserDetails, data.message);
-			}
-		  });
-		//message save to DB
-		 var message=new Message({
-			ipClient:data.ipClient,
-			clientName:getProperty(data.ipClient),
-			message:data.message,
-			timechat:miliseconds
-		 });
-		 //save db mongoose
-        message.save(function(err, thor) {
-		  if (err) return console.error(err);
-		  console.dir(thor);
-		});
+		 
+		 //set content link
+		 var haveLink = data.message.indexOf("http") !== -1 ||  data.message.indexOf("https") !== -1;
+		 if(haveLink) {
+			//find last record in DB
+				var cursor  = Message.find().limit(1).sort({ $natural : -1 });
+				  cursor.exec(function(err, results) {
+					if (err) throw err;
+					if(results.length) {
+					UserDetails.same = data.ipClient == results[0].ipClient ? true : false;
+					//update chat
+					io.sockets.emit('updatechat',UserDetails, data.message);
+					/* UserDetails.title = "";
+					UserDetails.description = "";
+					UserDetails.img = ""; */			
+					}
+				  });
+				  //message save to DB
+				 var message=new Message({
+					ipClient:data.ipClient,
+					clientName:getProperty(data.ipClient),
+					message:data.message,
+					timechat:miliseconds,
+				 });
+				 //save db mongoose
+				message.save(function(err, thor) {
+				  if (err) return console.error(err);
+				  console.dir(thor);
+				});
+			getMetadata(data.message).then(function(response) {
+			  console.log("Success!", response);
+			  //set content to UserDetails 
+				UserDetails.title = response.title;
+				UserDetails.description = response.description;
+				UserDetails.img = response.img; 
+				//set inforLink order to save DB
+					inforLink.title = response.title;
+					inforLink.description = response.description;
+					inforLink.img = response.img;
+					
+			}).then(function (response){
+				
+				console.log("----------------<"+data.message);
+				if(typeof inforLink.title != "undefined" && typeof inforLink.description != "undefined" && typeof inforLink.img != "undefined" ) {
+					Message.update({message: data.message},{title: inforLink.title,description:inforLink.description,
+					img:inforLink.img},{multi:true}, function(err, result){
+					console.log(data.message);
+					console.log(result);
+					}); 
+						//show all chat
+					var cursord  = Message.find().limit(record).sort({$natural : -1,timechat: 'asc'});
+					  cursord.exec(function(err, messages) {
+						//if (err) return console.error(err);
+						//console.log(messages);
+						io.sockets.emit('showallchat', messages.reverse());
+					  });
+				}
+			});
+			
+		 } else{
+			//find last record in DB
+			var cursor  = Message.find().limit(1).sort({ $natural : -1 });
+			  cursor.exec(function(err, results) {
+				if (err) throw err;
+				if(results.length) {
+				UserDetails.same = data.ipClient == results[0].ipClient ? true : false;
+				console.log('ip same :'+UserDetails.same);
+				io.sockets.emit('updatechat',UserDetails, data.message);
+				}
+			  });
+			  //message save to DB
+				 var message=new Message({
+					ipClient:data.ipClient,
+					clientName:getProperty(data.ipClient),
+					message:data.message,
+					timechat:miliseconds
+				 });
+				 //save db mongoose
+				message.save(function(err, thor) {
+				  if (err) return console.error(err);
+				  console.dir(thor);
+				});
+		 }
+		 
+		 
+		 
+		 
 	});
   
 	  //check typing
@@ -132,7 +242,36 @@ io.sockets.on('connection', function(socket) {
 		io.sockets.emit('updateStatuslongTyping',data);
 	  });
 	  
-  
+	  
+	  //send file
+app.use(bodyParser.json()); 
+var storage =   multer.diskStorage({
+	  destination: function (req, file, callback) {
+		callback(null, './imgUpload');
+	  },
+	  filename: function (req, file, callback) {
+		callback(null, file.originalname);
+	  }
+	});
+var upload = multer({ storage : storage }).array('userPhoto',10);
+
+app.post('/sendImage',function(req,res){
+    upload(req,res,function(err) {
+        //console.log(req.body);
+        //console.log(req.files);
+        if(err) {
+            return res.end("Error uploading file.");
+        }
+        res.end("File is uploaded");
+    });
+});
+//download file
+app.post("/download",function(req,res){
+	var name=req.body.file;
+		var d="J:\\Node_project\\Demo\\chat_git\\chatEditing\\imgUpload\\";
+		res.download(d+name);
+});
+
 	  //join a room
 	  socket.on('subscribe_room', function(room) { 
 			console.log('joining room', room);
